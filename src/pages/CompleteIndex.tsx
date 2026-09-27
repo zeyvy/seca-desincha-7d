@@ -446,31 +446,63 @@ const initialState = {
   measurements: [] as { date: string; weight: string; waist: string; abdomen: string; hip: string; photo?: string }[],
 };
 
+const STORAGE_KEY = "seca-desincha-state";
+
 function getSafeStorage(): Storage | null {
   try {
-    return typeof window !== "undefined" ? window.localStorage : null;
+    if (typeof window === "undefined") return null;
+
+    const storage = window.localStorage;
+    const testKey = "__seca_desincha_storage_test__";
+
+    storage.setItem(testKey, "1");
+    storage.removeItem(testKey);
+
+    return storage;
   } catch {
+    // O Preview pode usar um documento sandboxed sem allow-same-origin.
+    // Nesse caso, o aplicativo continua funcionando em memória.
     return null;
   }
 }
 
 function loadState() {
+  const storage = getSafeStorage();
+
+  if (!storage) {
+    return { ...initialState };
+  }
+
   try {
-    const storage = getSafeStorage();
-    const saved = storage?.getItem("seca-desincha-state");
+    const saved = storage.getItem(STORAGE_KEY);
 
     return {
       ...initialState,
       ...(saved ? JSON.parse(saved) : {}),
     };
   } catch {
-    return initialState;
+    return { ...initialState };
+  }
+}
+
+function saveState(state: typeof initialState) {
+  const storage = getSafeStorage();
+
+  if (!storage) return;
+
+  try {
+    storage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // O Preview continua utilizável mesmo sem persistência disponível.
   }
 }
 
 export default function CompleteIndex() {
-  const [data, setData] = useState(loadState);
-  const [screen, setScreen] = useState<Screen>(() => (loadState().email ? "home" : "email"));
+  const [data, setData] = useState<typeof initialState>(() => loadState());
+  const [screen, setScreen] = useState<Screen>(() => {
+    const saved = loadState();
+    return saved.email ? "home" : "email";
+  });
   const [tutorial, setTutorial] = useState(0);
   const [selectedDay, setSelectedDay] = useState(1);
   const [workoutStep, setWorkoutStep] = useState(0);
@@ -480,11 +512,7 @@ export default function CompleteIndex() {
   const [email, setEmail] = useState("");
 
   useEffect(() => {
-    try {
-      getSafeStorage()?.setItem("seca-desincha-state", JSON.stringify(data));
-    } catch {
-      // O Preview pode bloquear o localStorage em documentos sandboxed.
-    }
+    saveState(data);
   }, [data]);
 
   const day = days[selectedDay - 1];
@@ -494,7 +522,8 @@ export default function CompleteIndex() {
   const unlocked = Math.min(7, (data.completedDays.length || 0) + 1);
   const overall = Math.round((data.completedDays.length / 7) * 100);
 
-  const updateData = (patch: Partial<typeof data>) => setData((current) => ({ ...current, ...patch }));
+  const updateData = (patch: Partial<typeof data>) =>
+    setData((current) => ({ ...current, ...patch }));
 
   const saveEmail = () => {
     if (!email.trim() || !email.includes("@")) return;
