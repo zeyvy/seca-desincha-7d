@@ -447,7 +447,10 @@ const initialState = {
 
 function loadState() {
   try {
-    return { ...initialState, ...JSON.parse(localStorage.getItem("seca-desincha-state") || "{}") };
+    return {
+      ...initialState,
+      ...JSON.parse(localStorage.getItem("seca-desincha-state") || "{}"),
+    };
   } catch {
     return initialState;
   }
@@ -465,7 +468,11 @@ export default function CompleteIndex() {
   const [email, setEmail] = useState("");
 
   useEffect(() => {
-    localStorage.setItem("seca-desincha-state", JSON.stringify(data));
+    try {
+      localStorage.setItem("seca-desincha-state", JSON.stringify(data));
+    } catch {
+      // Storage is unavailable in sandboxed preview documents.
+    }
   }, [data]);
 
   const day = days[selectedDay - 1];
