@@ -28,16 +28,20 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import Tracking from "@/components/Tracking";
 
 type Screen =
   | "email"
   | "welcome"
   | "tutorial"
+  | "upsell"
   | "home"
   | "day"
   | "workout"
   | "complete"
-  | "upsell";
+  | "tracking";
+
+type AccessStatus = "pending" | "approved" | "cancelled" | "refunded" | "locked";
 
 type Exercise = {
   id: string;
@@ -70,11 +74,13 @@ type Day = {
 
 const photos = {
   meals:
-    "https://images.pexels.com/photos/12499380/pexels-photo-12499380.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "https://images.pexels.com/photos/8844564/pexels-photo-8844564.jpeg?auto=compress&cs=tinysrgb&w=1600",
   movement:
-    "https://images.pexels.com/photos/6496094/pexels-photo-6496094.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "https://images.pexels.com/photos/6516232/pexels-photo-6516232.jpeg?auto=compress&cs=tinysrgb&w=1600",
   tracker:
-    "https://images.pexels.com/photos/7947956/pexels-photo-7947956.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "https://images.pexels.com/photos/7947851/pexels-photo-7947851.jpeg?auto=compress&cs=tinysrgb&w=1600",
+  checklist:
+    "https://images.pexels.com/photos/8850721/pexels-photo-8850721.jpeg?auto=compress&cs=tinysrgb&w=1600",
 };
 
 const exerciseLibrary: Record<string, Exercise> = {
@@ -447,6 +453,9 @@ const initialState = {
 };
 
 const STORAGE_KEY = "seca-desincha-state";
+const CORPO_FOCO_CHECKOUT_URL =
+  import.meta.env.VITE_CORPO_FOCO_CHECKOUT_URL ||
+  "https://checkout.perfectpay.com.br/";
 
 function getSafeStorage(): Storage | null {
   try {
@@ -510,10 +519,47 @@ export default function CompleteIndex() {
   const [menu, setMenu] = useState(false);
   const [measure, setMeasure] = useState({ weight: "", waist: "", abdomen: "", hip: "", photo: "" });
   const [email, setEmail] = useState("");
+  const [accessStatus, setAccessStatus] = useState<AccessStatus>("locked");
 
   useEffect(() => {
     saveState(data);
   }, [data]);
+
+  // Acesso pago nunca é liberado pelo frontend, pelo localStorage ou pelo
+  // retorno do checkout. O backend deve responder somente com o status real
+  // registrado pelo webhook do gateway.
+  useEffect(() => {
+    if (!data.email) return;
+
+    let cancelled = false;
+
+    const refreshAccess = async () => {
+      try {
+        const response = await fetch(
+          `/api/user-access?email=${encodeURIComponent(data.email)}&product_id=corpo_foco_30d`,
+          { headers: { Accept: "application/json" } },
+        );
+
+        if (!response.ok) return;
+
+        const result = (await response.json()) as { status?: AccessStatus };
+        if (!cancelled && result.status) {
+          setAccessStatus(result.status);
+        }
+      } catch {
+        // O endpoint é opcional no Preview. Sem confirmação do backend,
+        // o conteúdo pago permanece bloqueado.
+      }
+    };
+
+    refreshAccess();
+    const interval = window.setInterval(refreshAccess, 30000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [data.email]);
 
   const day = days[selectedDay - 1];
   const checks = data.checklist[selectedDay] || Array(5).fill(false);
@@ -612,7 +658,7 @@ export default function CompleteIndex() {
           <p className="mt-8 text-sm text-primary">{tutorial + 1} DE 5</p>
           <h1 className="mt-2 text-3xl font-semibold">{tutorials[tutorial][0]}</h1>
           <p className="mt-4 leading-7 text-muted-foreground">{tutorials[tutorial][1]}</p>
-          <Button className="mt-10 h-12" onClick={() => tutorial < 4 ? setTutorial(tutorial + 1) : (updateData({ tutorialDone: true }), setScreen("home"))}>
+          <Button className="mt-10 h-12" onClick={() => tutorial < 4 ? setTutorial(tutorial + 1) : (updateData({ tutorialDone: true }), setScreen("upsell"))}>
             {tutorial < 4 ? "PRÓXIMO" : "ENTENDI. VAMOS COMEÇAR"} <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
@@ -699,15 +745,108 @@ export default function CompleteIndex() {
   }
 
   if (screen === "upsell") {
-    return <Shell><div className="mx-auto max-w-3xl px-5 py-12 text-center"><Badge variant="secondary">PRÓXIMA JORNADA</Badge><h1 className="mt-5 text-4xl font-semibold">VOCÊ JÁ COMEÇOU.</h1><p className="mt-4 text-xl text-muted-foreground">Agora você pode continuar sua jornada por mais 30 dias.</p><Card className="mx-auto mt-10 max-w-xl text-left"><CardHeader><CardTitle>CORPO EM FOCO — 30 DIAS</CardTitle></CardHeader><CardContent><div className="space-y-3">{["30 dias de jornada guiada", "Novos treinos", "Missões diárias", "Organização de rotina", "Acompanhamento de progresso", "Continuidade dentro do mesmo aplicativo"].map((item) => <p key={item} className="flex gap-3 text-sm"><Check className="h-4 w-4 shrink-0 text-primary" />{item}</p>)}</div><p className="mt-6 text-sm text-muted-foreground">Tudo dentro do mesmo aplicativo, sem precisar começar do zero.</p><Button className="mt-6 w-full" size="lg" onClick={() => window.open("https://checkout.perfectpay.com.br/", "_blank")}>QUERO CONTINUAR POR 30 DIAS</Button></CardContent></Card><Button variant="ghost" className="mt-6" onClick={() => setScreen("home")}>Voltar para minha jornada</Button></div></Shell>;
+    if (accessStatus === "approved") {
+      setScreen("tracking");
+      return null;
+    }
+
+    return (
+      <Shell>
+        <main className="mx-auto max-w-4xl px-5 py-12 sm:py-20">
+          <div className="mx-auto max-w-2xl text-center">
+            <Badge variant="secondary">PRÓXIMA JORNADA</Badge>
+            <h1 className="mt-6 text-4xl font-semibold tracking-tight sm:text-5xl">
+              VOCÊ JÁ DEU O PRIMEIRO PASSO.
+            </h1>
+            <p className="mt-5 text-lg text-muted-foreground">
+              Agora você pode continuar sua jornada por mais 30 dias.
+            </p>
+          </div>
+
+          <Card className="mx-auto mt-10 max-w-2xl overflow-hidden border-primary/20 shadow-sm">
+            <div className="bg-primary p-8 text-primary-foreground">
+              <p className="text-sm font-medium tracking-widest opacity-80">
+                CORPO EM FOCO
+              </p>
+              <h2 className="mt-2 text-3xl font-semibold">30 DIAS</h2>
+              <p className="mt-3 max-w-lg opacity-90">
+                Uma jornada guiada para continuar sua rotina dentro do mesmo aplicativo.
+              </p>
+            </div>
+            <CardContent className="p-6 sm:p-8">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[
+                  "30 dias de jornada guiada",
+                  "Treinos curtos",
+                  "Missões diárias",
+                  "Organização da rotina",
+                  "Registro de progresso",
+                  "Acompanhamento da jornada",
+                ].map((item) => (
+                  <div key={item} className="flex items-center gap-3 rounded-xl bg-muted/60 p-4 text-sm">
+                    <Check className="h-4 w-4 shrink-0 text-primary" />
+                    {item}
+                  </div>
+                ))}
+              </div>
+              <p className="mt-6 text-sm leading-6 text-muted-foreground">
+                Depois dos 7 dias, você não precisa começar do zero. Continue dentro do mesmo aplicativo.
+              </p>
+              {accessStatus === "pending" && (
+                <p className="mt-4 rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+                  Estamos aguardando a confirmação do pagamento. O acompanhamento continuará bloqueado até a aprovação do gateway.
+                </p>
+              )}
+              <Button
+                className="mt-6 h-12 w-full"
+                size="lg"
+                onClick={() => window.open(CORPO_FOCO_CHECKOUT_URL, "_blank", "noopener,noreferrer")}
+              >
+                QUERO CONTINUAR POR 30 DIAS
+              </Button>
+              <Button
+                variant="ghost"
+                className="mt-3 w-full"
+                onClick={() => setScreen("home")}
+              >
+                CONTINUAR COM O 7D
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+      </Shell>
+    );
   }
 
-  return <Dashboard data={data} overall={overall} unlocked={unlocked} menu={menu} setMenu={setMenu} onDay={(number) => { setSelectedDay(number); setScreen("day"); }} onUpsell={() => setScreen("upsell")} />;
+  if (screen === "tracking") {
+    return (
+      <Tracking
+        data={data}
+        accessStatus={accessStatus}
+        onBack={() => setScreen("home")}
+        onCheckout={() => window.open(CORPO_FOCO_CHECKOUT_URL, "_blank", "noopener,noreferrer")}
+      />
+    );
+  }
+
+  return (
+    <Dashboard
+      data={data}
+      overall={overall}
+      unlocked={unlocked}
+      menu={menu}
+      setMenu={setMenu}
+      accessStatus={accessStatus}
+      onDay={(number) => { setSelectedDay(number); setScreen("day"); }}
+      onTracking={() => setScreen("tracking")}
+      onUpsell={() => setScreen("upsell")}
+    />
+  );
 }
 
-function Dashboard({ data, overall, unlocked, menu, setMenu, onDay, onUpsell }: any) {
+function Dashboard({ data, overall, unlocked, menu, setMenu, accessStatus, onDay, onTracking, onUpsell }: any) {
   const nextDay = Math.min(7, (data.completedDays.length || 0) + 1);
-  return <Shell><header className="border-b border-border/70"><div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5"><Brand /><button className="rounded-lg p-2 sm:hidden" onClick={() => setMenu(!menu)}>{menu ? <X /> : <Menu />}</button><nav className="hidden items-center gap-5 text-sm sm:flex"><span className="text-muted-foreground">{data.email}</span><Button size="sm" onClick={() => onDay(nextDay)}>Continuar jornada</Button></nav></div></header><main className="mx-auto max-w-6xl px-5 py-10 sm:py-14"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><Badge variant="secondary">DIA {nextDay} DE 7</Badge><h1 className="mt-3 text-4xl font-semibold">Sua jornada, um passo por vez.</h1><p className="mt-3 text-muted-foreground">Acompanhe suas tarefas, alimentação e movimento.</p></div><div className="w-full sm:w-48"><div className="mb-2 flex justify-between text-sm"><span>Progresso</span><span>{overall}% concluído</span></div><Progress value={overall} /></div></div><Card className="mt-8 overflow-hidden border-primary/20"><CardContent className="grid gap-6 p-6 sm:grid-cols-[1fr_240px] sm:p-8"><div><p className="text-sm font-semibold tracking-widest text-primary">SEU PRÓXIMO PASSO</p><h2 className="mt-3 text-2xl font-semibold">Comece pelo checklist do Dia {nextDay}.</h2><p className="mt-2 text-muted-foreground">Você encontrará alimentação, missão e um treino completo explicado passo a passo.</p><Button className="mt-6" onClick={() => onDay(nextDay)}>CONTINUAR DIA {nextDay} <ArrowRight className="ml-2 h-4 w-4" /></Button></div><img src={photos.tracker} alt="Acompanhamento de progresso" className="h-40 w-full rounded-xl object-cover" /></CardContent></Card><h2 className="mt-12 text-xl font-semibold">SEUS 7 DIAS</h2><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{days.map((day: Day, index: number) => { const n = index + 1; const complete = data.completedDays.includes(n); const available = n <= unlocked; return <button key={day.title} disabled={!available} onClick={() => onDay(n)} className={`rounded-xl border p-5 text-left transition-colors ${complete ? "border-primary/30 bg-primary/5" : available ? "border-border hover:border-primary" : "border-border opacity-60"}`}><div className="flex items-center justify-between"><span className="text-sm font-semibold">DIA {n}</span>{complete ? <Check className="h-4 w-4 text-primary" /> : available ? <span className="text-xs text-primary">LIBERADO</span> : <Lock className="h-4 w-4 text-muted-foreground" />}</div><p className="mt-3 font-medium">{day.title.split(" — ")[1]}</p><p className="mt-1 text-xs text-muted-foreground">{complete ? "CONCLUÍDO" : available ? "Comece quando quiser" : "BLOQUEADO"}</p></button> })}</div>{data.completedDays.length === 7 && <Card className="mt-10"><CardContent className="flex flex-col justify-between gap-5 p-6 sm:flex-row sm:items-center"><div><p className="text-xs font-semibold tracking-widest text-primary">PRÓXIMA JORNADA</p><h2 className="mt-2 text-xl font-semibold">🔒 CORPO EM FOCO — 30 DIAS</h2><p className="mt-1 text-sm text-muted-foreground">Continue sua jornada.</p></div><Button onClick={onUpsell}>DESBLOQUEAR</Button></CardContent></Card>}</main></Shell>;
+  return <Shell><header className="border-b border-border/70"><div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5"><Brand /><button className="rounded-lg p-2 sm:hidden" onClick={() => setMenu(!menu)}>{menu ? <X /> : <Menu />}</button><nav className="hidden items-center gap-5 text-sm sm:flex"><span className="text-muted-foreground">{data.email}</span><Button size="sm" onClick={() => onDay(nextDay)}>Continuar jornada</Button></nav></div></header><main className="mx-auto max-w-6xl px-5 py-10 sm:py-14"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><Badge variant="secondary">DIA {nextDay} DE 7</Badge><h1 className="mt-3 text-4xl font-semibold">Sua jornada, um passo por vez.</h1><p className="mt-3 text-muted-foreground">Acompanhe suas tarefas, alimentação e movimento.</p></div><div className="w-full sm:w-48"><div className="mb-2 flex justify-between text-sm"><span>Progresso</span><span>{overall}% concluído</span></div><Progress value={overall} /></div></div><Card className="mt-8 overflow-hidden border-primary/20"><CardContent className="grid gap-6 p-6 sm:grid-cols-[1fr_240px] sm:p-8"><div><p className="text-sm font-semibold tracking-widest text-primary">SEU PRÓXIMO PASSO</p><h2 className="mt-3 text-2xl font-semibold">Comece pelo checklist do Dia {nextDay}.</h2><p className="mt-2 text-muted-foreground">Você encontrará alimentação, missão e um treino completo explicado passo a passo.</p><Button className="mt-6" onClick={() => onDay(nextDay)}>CONTINUAR DIA {nextDay} <ArrowRight className="ml-2 h-4 w-4" /></Button></div><img src={photos.tracker} alt="Acompanhamento de progresso" className="h-40 w-full rounded-xl object-cover" /></CardContent></Card><h2 className="mt-12 text-xl font-semibold">SEUS 7 DIAS</h2><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{days.map((day: Day, index: number) => { const n = index + 1; const complete = data.completedDays.includes(n); const available = n <= unlocked; return <button key={day.title} disabled={!available} onClick={() => onDay(n)} className={`rounded-xl border p-5 text-left transition-colors ${complete ? "border-primary/30 bg-primary/5" : available ? "border-border hover:border-primary" : "border-border opacity-60"}`}><div className="flex items-center justify-between"><span className="text-sm font-semibold">DIA {n}</span>{complete ? <Check className="h-4 w-4 text-primary" /> : available ? <span className="text-xs text-primary">LIBERADO</span> : <Lock className="h-4 w-4 text-muted-foreground" />}</div><p className="mt-3 font-medium">{day.title.split(" — ")[1]}</p><p className="mt-1 text-xs text-muted-foreground">{complete ? "CONCLUÍDO" : available ? "Comece quando quiser" : "BLOQUEADO"}</p></button> })}</div>{data.completedDays.length === 7 && <Card className="mt-10 border-primary/20"><CardContent className="flex flex-col justify-between gap-5 p-6 sm:flex-row sm:items-center"><div><p className="text-xs font-semibold tracking-widest text-primary">PRÓXIMA JORNADA</p><h2 className="mt-2 text-xl font-semibold">{accessStatus === "approved" ? "🔓 SEU ACOMPANHAMENTO ESTÁ LIBERADO ✓" : "🔒 CORPO EM FOCO — 30 DIAS"}</h2><p className="mt-1 text-sm text-muted-foreground">{accessStatus === "approved" ? "Continue sua jornada dentro do acompanhamento." : "Continue sua jornada por mais 30 dias."}</p></div><Button onClick={accessStatus === "approved" ? onTracking : onUpsell}>{accessStatus === "approved" ? "ENTRAR NO ACOMPANHAMENTO" : "DESBLOQUEAR"}</Button></CardContent></Card>}</main></Shell>;
 }
 
 function MeasurementCard({ measure, setMeasure, save, history }: any) {
@@ -749,7 +888,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       <footer className="border-t border-border/70 py-8">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-5 text-xs text-muted-foreground sm:flex-row sm:justify-between">
           <span>© 2024 7D Seca & Desincha</span>
-          <span>Fotos: Pexels — Brett Jordan, Spencer Stone, Gustavo Fring e RDNE Stock project.</span>
+          <span>Fotos: Pexels — Yaroslav Shuraev, Polina Tankilevitch, RDNE Stock project, Tara Winstead e Ivan S.</span>
         </div>
       </footer>
     </div>
