@@ -1,5 +1,5 @@
 import { Route, Routes } from "react-router-dom";
-import Index from "./pages/Index";
+import Index from "./pages/CompleteIndex";
 import NotFound from "./pages/NotFound";
 
 export default function App() {
