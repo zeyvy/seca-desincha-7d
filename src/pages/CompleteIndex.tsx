@@ -455,7 +455,7 @@ const initialState = {
 const STORAGE_KEY = "seca-desincha-state";
 const CORPO_FOCO_CHECKOUT_URL =
   import.meta.env.VITE_CORPO_FOCO_CHECKOUT_URL ||
-  "https://checkout.perfectpay.com.br/";
+  "https://pay.kirvano.com/47b6b2f7-c9b6-48b0-b38d-13c7ae1ce776";
 
 function getSafeStorage(): Storage | null {
   try {
