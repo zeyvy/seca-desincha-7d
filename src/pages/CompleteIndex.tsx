@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import logo from "@/assets/uploads/3718.png";
 import {
   ArrowLeft,
   ArrowRight,
@@ -445,11 +446,22 @@ const initialState = {
   measurements: [] as { date: string; weight: string; waist: string; abdomen: string; hip: string; photo?: string }[],
 };
 
+function getSafeStorage(): Storage | null {
+  try {
+    return typeof window !== "undefined" ? window.localStorage : null;
+  } catch {
+    return null;
+  }
+}
+
 function loadState() {
   try {
+    const storage = getSafeStorage();
+    const saved = storage?.getItem("seca-desincha-state");
+
     return {
       ...initialState,
-      ...JSON.parse(localStorage.getItem("seca-desincha-state") || "{}"),
+      ...(saved ? JSON.parse(saved) : {}),
     };
   } catch {
     return initialState;
@@ -469,9 +481,9 @@ export default function CompleteIndex() {
 
   useEffect(() => {
     try {
-      localStorage.setItem("seca-desincha-state", JSON.stringify(data));
+      getSafeStorage()?.setItem("seca-desincha-state", JSON.stringify(data));
     } catch {
-      // Storage is unavailable in sandboxed preview documents.
+      // O Preview pode bloquear o localStorage em documentos sandboxed.
     }
   }, [data]);
 
@@ -682,9 +694,35 @@ function Info({ label, value }: { label: string; value: string }) {
 }
 
 function Brand() {
-  return <div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground"><Sparkles className="h-5 w-5" /></span><span className="font-semibold tracking-tight">Seca & Desincha <span className="text-primary">7D</span></span></div>;
+  return (
+    <div className="flex items-center gap-2.5">
+      <img
+        src={logo}
+        alt="Logo 7D Seca & Desincha"
+        className="h-10 w-10 object-contain"
+      />
+      <span className="font-semibold tracking-tight">
+        7D <span className="text-primary">Seca & Desincha</span>
+      </span>
+    </div>
+  );
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-screen bg-background text-foreground"><header className="border-b border-border/70"><div className="mx-auto flex h-16 max-w-6xl items-center px-5 sm:px-8"><Brand /></div></header>{children}<footer className="border-t border-border/70 py-8"><div className="mx-auto flex max-w-6xl flex-col gap-2 px-5 text-xs text-muted-foreground sm:flex-row sm:justify-between"><span>© 2024 Seca & Desincha 7D</span><span>Fotos: Pexels — Brett Jordan, Spencer Stone, Gustavo Fring e RDNE Stock project.</span></div></footer></div>;
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-border/70">
+        <div className="mx-auto flex h-16 max-w-6xl items-center px-5 sm:px-8">
+          <Brand />
+        </div>
+      </header>
+      {children}
+      <footer className="border-t border-border/70 py-8">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-5 text-xs text-muted-foreground sm:flex-row sm:justify-between">
+          <span>© 2024 7D Seca & Desincha</span>
+          <span>Fotos: Pexels — Brett Jordan, Spencer Stone, Gustavo Fring e RDNE Stock project.</span>
+        </div>
+      </footer>
+    </div>
+  );
 }
