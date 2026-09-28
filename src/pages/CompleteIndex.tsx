@@ -870,7 +870,7 @@ function Brand() {
         className="h-10 w-10 object-contain"
       />
       <span className="font-semibold tracking-tight">
-        7D <span className="text-primary">Seca & Desincha</span>
+        <span className="text-primary">7D Seca & Desincha</span>
       </span>
     </div>
   );

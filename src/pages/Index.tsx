@@ -126,7 +126,7 @@ export default function Index() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <Leaf className="h-5 w-5" />
             </span>
-            <span className="font-semibold tracking-tight">Seca & Desincha <span className="text-primary">7D</span></span>
+            <span className="font-semibold tracking-tight"><span className="text-primary">7D Seca & Desincha</span></span>
           </button>
 
           <nav className="hidden items-center gap-6 text-sm text-muted-foreground sm:flex">
@@ -345,7 +345,7 @@ export default function Index() {
 
       <footer className="border-t border-border/70 py-8">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-5 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-8">
-          <span>© 2024 Seca & Desincha 7D</span>
+          <span>© 2024 7D Seca & Desincha</span>
           <span>Um passo de cada vez, com carinho.</span>
         </div>
       </footer>
