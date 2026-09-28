@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import logo from "@/assets/uploads/3794.png";
 import {
   ArrowLeft,
   ArrowRight,
@@ -6,7 +7,6 @@ import {
   ChevronRight,
   Droplets,
   Flame,
-  Leaf,
   Menu,
   Moon,
   Sparkles,
@@ -123,9 +123,11 @@ export default function Index() {
             onClick={() => setStep("home")}
             aria-label="Ir para o início"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <Leaf className="h-5 w-5" />
-            </span>
+            <img
+              src={logo}
+              alt="Logo 7D Seca & Desincha"
+              className="h-9 w-9 object-contain"
+            />
             <span className="font-semibold tracking-tight"><span className="text-primary">7D Seca & Desincha</span></span>
           </button>
 

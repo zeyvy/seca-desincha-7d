@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import logo from "@/assets/uploads/3794.png";
 
 import {
   ArrowLeft,
@@ -864,9 +865,11 @@ function Info({ label, value }: { label: string; value: string }) {
 function Brand() {
   return (
     <div className="flex items-center gap-2.5" aria-label="7D Seca & Desincha">
-      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
-        7D
-      </span>
+      <img
+        src={logo}
+        alt="Logo 7D Seca & Desincha"
+        className="h-10 w-10 object-contain"
+      />
       <span className="font-semibold tracking-tight">
         <span className="text-primary">7D SECA & DESINCHA</span>
       </span>
