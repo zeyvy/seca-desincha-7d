@@ -801,11 +801,17 @@ export default function CompleteIndex() {
                 </p>
               )}
               <Button
+                asChild
                 className="mt-6 h-12 w-full"
                 size="lg"
-                onClick={openCorpoFocoCheckout}
               >
-                QUERO CONTINUAR POR 30 DIAS
+                <a
+                  href="https://pay.kirvano.com/47b6b2f7-c9b6-48b0-b38d-13c7ae1ce776"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  QUERO CONTINUAR POR 30 DIAS
+                </a>
               </Button>
               <Button
                 variant="ghost"

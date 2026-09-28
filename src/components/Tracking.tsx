@@ -54,7 +54,15 @@ export default function Tracking({ data, accessStatus, onBack, onCheckout }: Tra
               Estamos aguardando a confirmação do pagamento.
             </p>
           )}
-          <Button className="mt-8" onClick={onCheckout}>DESBLOQUEAR ACOMPANHAMENTO</Button>
+          <Button asChild className="mt-8">
+            <a
+              href="https://pay.kirvano.com/47b6b2f7-c9b6-48b0-b38d-13c7ae1ce776"
+              target="_blank"
+              rel="noreferrer"
+            >
+              DESBLOQUEAR ACOMPANHAMENTO
+            </a>
+          </Button>
           <Button variant="ghost" className="mt-3 block w-full" onClick={onBack}>Voltar para a Home</Button>
         </div>
       </Shell>
