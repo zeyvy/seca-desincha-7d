@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import logo from "@/assets/uploads/3718.png";
+import logo from "@/assets/uploads/3790.png";
 import {
   ArrowLeft,
   ArrowRight,
@@ -611,7 +611,7 @@ export default function CompleteIndex() {
       <Shell>
         <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-md flex-col justify-center px-5 py-12">
           <Brand />
-          <Badge variant="secondary" className="mt-10 w-fit">SECA & DESINCHA 7D</Badge>
+          <Badge variant="secondary" className="mt-10 w-fit">7D SECA & DESINCHA</Badge>
           <h1 className="mt-5 text-4xl font-semibold tracking-tight">BEM-VINDA AO 7D SECA & DESINCHA</h1>
           <p className="mt-4 text-muted-foreground">Antes de começar, informe seu melhor e-mail para salvar seu progresso e acessar sua jornada.</p>
           <label className="mt-8 text-sm font-medium" htmlFor="email">Digite seu e-mail</label>
@@ -870,7 +870,7 @@ function Brand() {
         className="h-10 w-10 object-contain"
       />
       <span className="font-semibold tracking-tight">
-        <span className="text-primary">7D Seca & Desincha</span>
+        <span className="text-primary">7D SECA & DESINCHA</span>
       </span>
     </div>
   );
@@ -887,7 +887,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       {children}
       <footer className="border-t border-border/70 py-8">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-5 text-xs text-muted-foreground sm:flex-row sm:justify-between">
-          <span>© 2024 7D Seca & Desincha</span>
+          <span>© 2024 7D SECA & DESINCHA</span>
           <span>Fotos: Pexels — Yaroslav Shuraev, Polina Tankilevitch, RDNE Stock project, Tara Winstead e Ivan S.</span>
         </div>
       </footer>
