@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import logo from "@/assets/uploads/3790.png";
+import logo from "@/assets/uploads/3792.png";
 import {
   ArrowLeft,
   ArrowRight,
