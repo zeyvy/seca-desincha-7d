@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import logo from "@/assets/uploads/3794.png";
 
 import {
   ArrowLeft,
@@ -455,8 +454,11 @@ const initialState = {
 
 const STORAGE_KEY = "seca-desincha-state";
 const CORPO_FOCO_CHECKOUT_URL =
-  import.meta.env.VITE_CORPO_FOCO_CHECKOUT_URL ||
   "https://pay.kirvano.com/47b6b2f7-c9b6-48b0-b38d-13c7ae1ce776";
+
+function openCorpoFocoCheckout() {
+  window.location.assign(CORPO_FOCO_CHECKOUT_URL);
+}
 
 function getSafeStorage(): Storage | null {
   try {
@@ -801,7 +803,7 @@ export default function CompleteIndex() {
               <Button
                 className="mt-6 h-12 w-full"
                 size="lg"
-                onClick={() => window.open(CORPO_FOCO_CHECKOUT_URL, "_blank", "noopener,noreferrer")}
+                onClick={openCorpoFocoCheckout}
               >
                 QUERO CONTINUAR POR 30 DIAS
               </Button>
@@ -825,7 +827,7 @@ export default function CompleteIndex() {
         data={data}
         accessStatus={accessStatus}
         onBack={() => setScreen("home")}
-        onCheckout={() => window.open(CORPO_FOCO_CHECKOUT_URL, "_blank", "noopener,noreferrer")}
+        onCheckout={openCorpoFocoCheckout}
       />
     );
   }
@@ -864,14 +866,12 @@ function Info({ label, value }: { label: string; value: string }) {
 
 function Brand() {
   return (
-    <div className="flex items-center gap-2.5" aria-label="7D Seca & Desincha">
-      <img
-        src={logo}
-        alt="Logo 7D Seca & Desincha"
-        className="h-10 w-10 object-contain"
-      />
-      <span className="font-semibold tracking-tight">
-        <span className="text-primary">7D SECA & DESINCHA</span>
+    <div className="flex items-center gap-3" aria-label="7D Seca & Desincha">
+      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
+        7D
+      </span>
+      <span className="font-semibold tracking-tight text-primary">
+        7D Seca & Desincha
       </span>
     </div>
   );
